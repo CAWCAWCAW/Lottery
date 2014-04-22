@@ -12,7 +12,6 @@ namespace Lottery
     public class LTimer
     {
         public static LPlayers LPlayers;
-        public static LotteryMain LotteryMain;
         private Timer LotteryTimer;
 
             public LTimer()
@@ -32,7 +31,7 @@ namespace Lottery
             {
                 if (LotteryMain.LotteryRunning)
                 {
-                    TSPlayer.All.SendInfoMessage("A lottery is running with a total of {0}. The number is between 0 and 5,000", LotteryMain.LotteryTotal);
+                    TSPlayer.All.SendInfoMessage("A lottery is running with a total of {0}. The number is between 0 and 5,000", LotteryMain.Lotterytotalmoney);
                 }
             }
         }

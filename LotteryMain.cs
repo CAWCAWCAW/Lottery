@@ -14,12 +14,13 @@ namespace Lottery
     public class LotteryMain : TerrariaPlugin
     {
         private static LTimer lottotimer;
+        public static LPlayers LPlayer;
         private bool Hint = true;
 
         public override string Author { get { return "CAWCAWCAW"; } }
         public override string Description { get { return "A simple lottery script."; } }
         public override string Name { get { return "Lottery"; } }
-        public override Version Version { get { return new Version("1.0"); } }
+        public override Version Version { get { return new Version("1.1"); } }
 
 
         public LotteryMain(Main game)
@@ -58,13 +59,14 @@ namespace Lottery
         #region Lottery Commands
 
         public LPlayers[] Playerlist = new LPlayers[256];
-        public int LotteryTotal;
+        public static int LotteryTotal;
+        public static Money Lotterytotalmoney;
         public int LotteryWinningNumer;
         public int amount;
         public int numberguessed;
         public int Lotterynumberhigh;
         public int Lotterynumberlow;
-        public bool LotteryRunning = false;
+        public static bool LotteryRunning = false;
 
 
         public void Lottery(CommandArgs args)
@@ -73,12 +75,12 @@ namespace Lottery
             {
                 if (args.Player.Group.HasPermission("caw.lotteryadmin"))
                 {
-                args.Player.SendErrorMessage("Invalic syntax! Use /lottery [start/guess/pastguesses/hint/cancel]");
+                args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/pastguesses/hint/cancel]");
                 return;
                 }
                 else
                 {
-                    args.Player.SendErrorMessage("Invalic syntax! Use /lottery [start/guess/pastguesses/hint]");
+                    args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/pastguesses/hint]");
                     return;
                 }
             }
@@ -151,6 +153,7 @@ namespace Lottery
                                 args.Player.SendSuccessMessage("You have added {0} to the lottery.", moneyamount2);
                                 SEconomyPlugin.WorldAccount.TransferToAsync(UserSEAccount.BankAccount, moneyamount, Journalpayment, string.Format("{0} has been added to the lottery.", moneyamount2, args.Player.Name), string.Format("Lottery: " + "Adding money into the pool."));
                                 LotteryTotal += amount;
+                                Lotterytotalmoney = LotteryTotal;
                                 Playerlist[args.Player.Index].contribution += amount;
                                 Playerlist[args.Player.Index].guessedtimes++;
                                 Playerlist[args.Player.Index].guesses.Add(numberguessed);
@@ -158,13 +161,20 @@ namespace Lottery
                             }
                             if (numberguessed == LotteryWinningNumer)
                             {
-                                TSPlayer.All.SendInfoMessage("[Lottery] {0} has won the lottery of {1}!", args.Player.Name, LotteryTotal);
+                                TSPlayer.All.SendInfoMessage("[Lottery] {0} has won the lottery of {1}!", args.Player.Name, Lotterytotalmoney);
                                 SEconomyPlugin.WorldAccount.TransferToAsync(UserSEAccount.BankAccount, LotteryTotal, Journalpayment, string.Format("{0} has won the lottery!.", args.Player.Name), string.Format("Lottery: " + "Winning"));
                                 LotteryTotal = 0;
-                                Playerlist[args.Player.Index].contribution = 0;
-                                Playerlist[args.Player.Index].guessedtimes = 0;
-                                Playerlist[args.Player.Index].guesses.Clear();
+                                Lotterytotalmoney = 0;
                                 LotteryRunning = false;
+                                foreach (var player in Playerlist)
+                                {
+                                    if (player != null)
+                                    {
+                                        player.contribution = 0;
+                                        player.guessedtimes = 0;
+                                        player.guesses.Clear();
+                                    }
+                                }
                             }
                         }
                         else
@@ -179,11 +189,10 @@ namespace Lottery
                             if (Playerlist[args.Player.Index].guesses.Count > 0)
                             {
                                 args.Player.SendErrorMessage("You have guessed " + Playerlist[args.Player.Index].guessedtimes + " times. Your previous guesses are: " + string.Join(", ", Playerlist[args.Player.Index].guesses));
-                                args.Player.SendErrorMessage("The amount you have put into the pot is: " + Playerlist[args.Player.Index].contribution);
                             }
                             else
                             {
-                                args.Player.SendErrorMessage("You have not guessed or put in a contribution fo the lottery. Type /lottery to join in!");
+                                args.Player.SendErrorMessage("You have not guessed or contributed the lottery. Type /lottery to join in!");
                             }
                         }
                         else
@@ -216,7 +225,8 @@ namespace Lottery
                     case "total":
                         if (LotteryRunning)
                         {
-                            args.Player.SendInfoMessage("The current lottry total is {0}.", LotteryTotal);
+                            args.Player.SendInfoMessage("The current lottry total is {0}.", Lotterytotalmoney);
+                            args.Player.SendErrorMessage("The amount you have put into the pot is: " + Playerlist[args.Player.Index].contribution);
                             if (args.Player.Group.HasPermission("caw.winningnumber"))
                             {
                                 args.Player.SendInfoMessage("Winning number is " + LotteryWinningNumer);
@@ -233,12 +243,19 @@ namespace Lottery
                         {
                             if (args.Player.Group.HasPermission("caw.cancellottery"))
                             {
-                                TSPlayer.All.SendInfoMessage(args.Player.Name + " has canceled the current lottery of " + LotteryTotal);
+                                TSPlayer.All.SendInfoMessage("{0} has canceled the current lottery of {1}.", args.Player.Name, Lotterytotalmoney);
                                 LotteryTotal = 0;
-                                Playerlist[args.Player.Index].contribution = 0;
-                                Playerlist[args.Player.Index].guessedtimes = 0;
-                                Playerlist[args.Player.Index].guesses.Clear();
+                                Lotterytotalmoney = 0;
                                 LotteryRunning = false;
+                                foreach (var player in Playerlist)
+                                {
+                                    if (player != null)
+                                    {
+                                        player.contribution = 0;
+                                        player.guessedtimes = 0;
+                                        player.guesses.Clear();
+                                    }
+                                }
                             }
                             else
                             {

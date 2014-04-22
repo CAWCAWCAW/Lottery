@@ -31,7 +31,8 @@ namespace Lottery
             {
                 if (LotteryMain.LotteryRunning)
                 {
-                    TSPlayer.All.SendInfoMessage("A lottery is running with a total of {0}. The number is between 0 and 5,000", LotteryMain.Lotterytotalmoney);
+                    TSPlayer.All.SendInfoMessage("[Lottery] A lottery is running with a total of {0}. The number is between 0 and 5,000", LotteryMain.Lotterytotalmoney);
+                    TSPlayer.All.SendInfoMessage("[Lottery] Type /lottery to figure out how to play!");
                 }
             }
         }

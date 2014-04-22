@@ -118,7 +118,7 @@ namespace Lottery
                         {
                             if (args.Parameters.Count < 2)
                             {
-                                args.Player.SendErrorMessage("Invalid syntax! Use /lottery guess numbertoguess money");
+                                args.Player.SendErrorMessage("Invalid syntax! Use /lottery guess <numbertoguess> <money>");
                                 return;
                             }
                             if (!int.TryParse(args.Parameters[1], out numberguessed))
@@ -150,14 +150,13 @@ namespace Lottery
                             }
                             if (playeramount > moneyamount2)
                             {
-                                args.Player.SendSuccessMessage("You have added {0} to the lottery.", moneyamount2);
+                                args.Player.SendSuccessMessage("You have guessed {0} and added {1} to the lottery.", numberguessed, moneyamount2);
                                 SEconomyPlugin.WorldAccount.TransferToAsync(UserSEAccount.BankAccount, moneyamount, Journalpayment, string.Format("{0} has been added to the lottery.", moneyamount2, args.Player.Name), string.Format("Lottery: " + "Adding money into the pool."));
                                 LotteryTotal += amount;
                                 Lotterytotalmoney = LotteryTotal;
                                 Playerlist[args.Player.Index].contribution += amount;
                                 Playerlist[args.Player.Index].guessedtimes++;
                                 Playerlist[args.Player.Index].guesses.Add(numberguessed);
-                                args.Player.SendSuccessMessage("You have guessed {0}. ", numberguessed);
                             }
                             if (numberguessed == LotteryWinningNumer)
                             {
@@ -206,7 +205,7 @@ namespace Lottery
                         {
                             if (Hint)
                             {
-                                if (args.Player.Group.HasPermission("caw.hint"))
+                                if (args.Player.Group.HasPermission("caw.lotteryhint"))
                                 {
                                     args.Player.SendInfoMessage("The lottery number could be any number in between {0} and {1}.", Lotterynumberlow, Lotterynumberhigh);
                                 }

@@ -20,7 +20,7 @@ namespace Lottery
         public override string Author { get { return "CAWCAWCAW"; } }
         public override string Description { get { return "A simple lottery script."; } }
         public override string Name { get { return "Lottery"; } }
-        public override Version Version { get { return new Version("1.1"); } }
+        public override Version Version { get { return new Version("1.2"); } }
 
 
         public LotteryMain(Main game)
@@ -28,7 +28,9 @@ namespace Lottery
 
         public override void Initialize()
         {
+            Configfile.ReadConfig();
             TShockAPI.Commands.ChatCommands.Add(new Command("caw.lottery", Lottery, "lottery"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("caw.reloadlottery", Reload_Config, "reloadlottery"));
             lottotimer = new LTimer();
             lottotimer.Start();
             ServerApi.Hooks.ServerJoin.Register(this, OnJoin);
@@ -59,14 +61,14 @@ namespace Lottery
         #region Lottery Commands
 
         public LPlayers[] Playerlist = new LPlayers[256];
-        public static int LotteryTotal;
         public static Money Lotterytotalmoney;
         public int LotteryWinningNumer;
-        public int amount;
+        public Money amount;
         public int numberguessed;
         public int Lotterynumberhigh;
         public int Lotterynumberlow;
         public static bool LotteryRunning = false;
+        public static bool LotteryCanSave = true;
 
 
         public void Lottery(CommandArgs args)
@@ -75,12 +77,12 @@ namespace Lottery
             {
                 if (args.Player.Group.HasPermission("caw.lotteryadmin"))
                 {
-                args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/pastguesses/hint/cancel]");
+                args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/total/pastguesses/hint/help/save/lotteryreload/cancel]");
                 return;
                 }
                 else
                 {
-                    args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/pastguesses/hint]");
+                    args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/total/pastguesses/hint/help]");
                     return;
                 }
             }
@@ -92,11 +94,11 @@ namespace Lottery
                             if (!LotteryRunning)
                             {
                                 Random random = new Random();
-                                LotteryWinningNumer = random.Next(0, 5000);
+                                LotteryWinningNumer = random.Next(Configfile.config.MinimumLotteryNumber, (Configfile.config.MaximumLotteryNumber +1 ));
                                 LotteryRunning = true;
-                                LotteryTotal = 0;
-                                Lotterynumberhigh = (LotteryWinningNumer + random.Next(1, 200));
-                                Lotterynumberlow = (LotteryWinningNumer - random.Next(1, 200));
+                                Money.TryParse(Configfile.config.LotteryTotalStartAmount, out Lotterytotalmoney);
+                                Lotterynumberhigh = (LotteryWinningNumer + random.Next(1, Configfile.config.RandomHintRange + 1));
+                                Lotterynumberlow = (LotteryWinningNumer - random.Next(1, Configfile.config.RandomHintRange + 1));
                                 TSPlayer.All.SendSuccessMessage("[Lottery] A lottery has been started type /lottery to see how to join!");
                             }
                             else
@@ -114,6 +116,7 @@ namespace Lottery
                         var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToSender;
                         var UserSEAccount = SEconomyPlugin.GetEconomyPlayerByBankAccountNameSafe(args.Player.UserAccountName);
                         var playeramount = UserSEAccount.BankAccount.Balance;
+
                         if (LotteryRunning)
                         {
                             if (args.Parameters.Count < 2)
@@ -126,12 +129,22 @@ namespace Lottery
                                 args.Player.SendErrorMessage("Error: Non-Numerical Amount Detected!");
                                 return;
                             }
-                            if (numberguessed > 5000 || numberguessed < 0)
+                            if (numberguessed > Configfile.config.MaximumLotteryNumber || numberguessed < Configfile.config.MinimumLotteryNumber)
                             {
-                                args.Player.SendErrorMessage("The number for this lottery is between 0 and 5,000");
+                                args.Player.SendErrorMessage("The number for this lottery is between {0} and {1}", Configfile.config.MinimumLotteryNumber, Configfile.config.MaximumLotteryNumber);
                                 return;
                             }
-                            if (!int.TryParse(args.Parameters[2], out amount))
+                            foreach (var player in Playerlist)
+                            {
+                                    if (Playerlist[player.Index].guesses.Contains(numberguessed))
+                                    {
+                                        args.Player.SendErrorMessage("You have already guessed {0}, please try a different number.", numberguessed);
+                                        return;
+                                    }
+                                    break;
+                            }
+
+                            if (!Money.TryParse(args.Parameters[2], out amount))
                             {
                                 args.Player.SendErrorMessage("Error: Non-Numerical Amount Detected!");
                                 return;
@@ -141,6 +154,12 @@ namespace Lottery
                                 args.Player.SendErrorMessage("Error: Amount to put in the lottery must be greater then 0! Amount you entered = {1}", amount);
                                 return;
                             }
+                            if (amount < Configfile.config.MinimumCashVoteAmount)
+                            {
+                                args.Player.SendErrorMessage("Error: The money you have put into the lottery does not match the minimum value to play. The minimum value is: {0}", Configfile.config.MinimumCashVoteAmount);
+                                return;
+                            }
+
                             Money moneyamount2 = amount;
                             Money moneyamount = -amount;
 
@@ -152,17 +171,17 @@ namespace Lottery
                             {
                                 args.Player.SendSuccessMessage("You have guessed {0} and added {1} to the lottery.", numberguessed, moneyamount2);
                                 SEconomyPlugin.WorldAccount.TransferToAsync(UserSEAccount.BankAccount, moneyamount, Journalpayment, string.Format("{0} has been added to the lottery.", moneyamount2, args.Player.Name), string.Format("Lottery: " + "Adding money into the pool."));
-                                LotteryTotal += amount;
-                                Lotterytotalmoney = LotteryTotal;
+                                Lotterytotalmoney += amount;
                                 Playerlist[args.Player.Index].contribution += amount;
                                 Playerlist[args.Player.Index].guessedtimes++;
                                 Playerlist[args.Player.Index].guesses.Add(numberguessed);
+                                
+
                             }
                             if (numberguessed == LotteryWinningNumer)
                             {
                                 TSPlayer.All.SendInfoMessage("[Lottery] {0} has won the lottery of {1}!", args.Player.Name, Lotterytotalmoney);
-                                SEconomyPlugin.WorldAccount.TransferToAsync(UserSEAccount.BankAccount, LotteryTotal, Journalpayment, string.Format("{0} has won the lottery!.", args.Player.Name), string.Format("Lottery: " + "Winning"));
-                                LotteryTotal = 0;
+                                SEconomyPlugin.WorldAccount.TransferToAsync(UserSEAccount.BankAccount, Lotterytotalmoney, Journalpayment, string.Format("{0} has won the lottery!.", args.Player.Name), string.Format("Lottery: " + "Winning"));
                                 Lotterytotalmoney = 0;
                                 LotteryRunning = false;
                                 foreach (var player in Playerlist)
@@ -242,8 +261,8 @@ namespace Lottery
                         {
                             if (args.Player.Group.HasPermission("caw.cancellottery"))
                             {
-                                TSPlayer.All.SendInfoMessage("{0} has canceled the current lottery of {1}.", args.Player.Name, Lotterytotalmoney);
-                                LotteryTotal = 0;
+                                Configfile.config.LotteryTotalStartAmount = Lotterytotalmoney.ToString();
+                                TSPlayer.All.SendInfoMessage("{0} has canceled the current lottery of {1}, and saved it until the lottery restarts.", args.Player.Name, Lotterytotalmoney);
                                 Lotterytotalmoney = 0;
                                 LotteryRunning = false;
                                 foreach (var player in Playerlist)
@@ -266,7 +285,54 @@ namespace Lottery
                             args.Player.SendErrorMessage("To cancel a lottery one must be started.");
                         }
                         break;
+                    case "save":
+                        if (LotteryCanSave)
+                        {
+                            if (args.Player.Group.HasPermission("caw.savelottery"))
+                            {
+                                if (LotteryRunning)
+                                {
+                                    Configfile.config.LotteryTotalStartAmount = Lotterytotalmoney.ToString();
+                                    args.Player.SendSuccessMessage("The config file has saved with a total lottery of {0}. Next time the lottery starts that is the starting value.", Configfile.config.LotteryTotalStartAmount);
+                                    Configfile.SaveConfig();
+                                }
+                            }
+                            else
+                            {
+                                args.Player.SendErrorMessage("You do not have permission to use this command.");
+                            }
+                        }
+                        else
+                        {
+                            args.Player.SendErrorMessage("The owner has turned the save feature off.");
+                        }
+                        break;
+                    case "help":
+                        if (LotteryRunning)
+                        {
+                            args.Player.SendSuccessMessage("Example of guessing: /lottery guess 210 25g5s");
+                        }
+                        else
+                        {
+                            args.Player.SendErrorMessage("A lottery is not started, type /lottery start to get one going!");
+                            args.Player.SendErrorMessage("Example of guessing: /lottery guess 210 25g5s");
+                        }
+                        break;
                 }
+        }
+        #endregion
+
+        #region Reload Config
+        private void Reload_Config(CommandArgs args)
+        {
+            if (Configfile.ReadConfig())
+            {
+                args.Player.SendMessage("Lottery config reloaded sucessfully.", Color.Yellow);
+            }
+            else
+            {
+                args.Player.SendErrorMessage("Lottery config reloaded unsucessfully. Check logs for details.");
+            }
         }
         #endregion
     }

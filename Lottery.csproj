@@ -61,6 +61,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config.cs" />
     <Compile Include="LotteryMain.cs" />
     <Compile Include="LPlayers.cs" />
     <Compile Include="LTimer.cs" />

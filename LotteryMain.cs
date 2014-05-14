@@ -10,7 +10,7 @@ using Wolfje.Plugins.SEconomy;
 
 namespace Lottery
 {
-    [ApiVersion(1, 15)]
+    [ApiVersion(1, 16)]
     public class LotteryMain : TerrariaPlugin
     {
         private static LTimer lottotimer;

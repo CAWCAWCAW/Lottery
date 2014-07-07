@@ -15,12 +15,14 @@ namespace Lottery
     {
         private static LTimer lottotimer;
         public static LPlayers LPlayer;
+        public static int MinLotteryNumber;
+        public static int MaxLotteryNumber;
         private bool Hint = true;
 
         public override string Author { get { return "CAWCAWCAW"; } }
         public override string Description { get { return "A simple lottery script."; } }
         public override string Name { get { return "Lottery"; } }
-        public override Version Version { get { return new Version("1.3.5"); } }
+        public override Version Version { get { return new Version("1.3.6"); } }
 
 
         public LotteryMain(Main game)
@@ -99,6 +101,8 @@ namespace Lottery
                                 Money.TryParse(Configfile.config.LotteryTotalStartAmount, out Lotterytotalmoney);
                                 Lotterynumberhigh = (LotteryWinningNumer + random.Next(1, Configfile.config.RandomHintRange + 1));
                                 Lotterynumberlow = (LotteryWinningNumer - random.Next(1, Configfile.config.RandomHintRange + 1));
+                                MaxLotteryNumber = Configfile.config.MaximumLotteryNumber;
+                                MinLotteryNumber = Configfile.config.MinimumLotteryNumber;
                                 TSPlayer.All.SendSuccessMessage("[Lottery] A lottery has been started type /lottery to see how to join!");
                             }
                             else

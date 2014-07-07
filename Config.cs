@@ -92,8 +92,11 @@ namespace Lottery
             public int LotteryReminderTimeMinutes = 1;
             public string RandomHintRanges = "The range below is plus or minus, and is randomly assigned each lottery.";
             public int RandomHintRange = 200;
+            public int GeneralHelpTimerInMinutes = 1;
+            public int GeneralHelpRange = 50;
             public int MinimumCashVoteAmount = 0;
             public string LotteryTotalStartAmount = "0p0g0s0c";
+            public string HelpMessage = "Example of how to guess: </lottery guess 210 25g5s> or /lottery guess 234 25500000";
             public bool LotteryCanSave = true;
             public int LotterySaveTimerMinutes = 5;
             //public bool AwardOnPartialCorrect = false;

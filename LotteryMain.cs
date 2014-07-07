@@ -20,7 +20,7 @@ namespace Lottery
         public override string Author { get { return "CAWCAWCAW"; } }
         public override string Description { get { return "A simple lottery script."; } }
         public override string Name { get { return "Lottery"; } }
-        public override Version Version { get { return new Version("1.2"); } }
+        public override Version Version { get { return new Version("1.3"); } }
 
 
         public LotteryMain(Main game)
@@ -62,7 +62,7 @@ namespace Lottery
 
         public LPlayers[] Playerlist = new LPlayers[256];
         public static Money Lotterytotalmoney;
-        public int LotteryWinningNumer;
+        public static int LotteryWinningNumer;
         public Money amount;
         public int numberguessed;
         public int Lotterynumberhigh;
@@ -310,12 +310,11 @@ namespace Lottery
                     case "help":
                         if (LotteryRunning)
                         {
-                            args.Player.SendSuccessMessage("Example of guessing: /lottery guess 210 25g5s");
+                            args.Player.SendSuccessMessage(Configfile.config.HelpMessage);
                         }
                         else
                         {
                             args.Player.SendErrorMessage("A lottery is not started, type /lottery start to get one going!");
-                            args.Player.SendErrorMessage("Example of guessing: /lottery guess 210 25g5s");
                         }
                         break;
                 }

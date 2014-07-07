@@ -14,11 +14,15 @@ namespace Lottery
         public static LPlayers LPlayers;
         private Timer LotteryTimer;
         private Timer LotterySaveTimer;
+        private Timer LotteryGeneralHelpTimer;
+        int MaxLotteryNumber = Configfile.config.MaximumLotteryNumber;
+        int MinLotteryNumber = Configfile.config.MinimumLotteryNumber;
 
             public LTimer()
             {
                     LotteryTimer = new Timer((Configfile.config.LotteryReminderTimeMinutes * 60) * 1000);
                     LotterySaveTimer = new Timer((Configfile.config.LotterySaveTimerMinutes * 60) * 1000);
+                    LotteryGeneralHelpTimer = new Timer((Configfile.config.GeneralHelpTimerInMinutes * 60) * 1000);
             }
 
             public void Start()
@@ -29,6 +33,9 @@ namespace Lottery
 
                 LotterySaveTimer.Enabled = true;
                 LotterySaveTimer.Elapsed += SaveTimer;
+
+                LotteryGeneralHelpTimer.Enabled = true;
+                LotteryGeneralHelpTimer.Elapsed += GeneralHelpTimer;
             }
 
 
@@ -38,6 +45,18 @@ namespace Lottery
                 {
                     TSPlayer.All.SendInfoMessage("[Lottery] A lottery is running with a total of {0}. The number is between {1} and {2}", LotteryMain.Lotterytotalmoney, Configfile.config.MinimumLotteryNumber, Configfile.config.MaximumLotteryNumber);
                     TSPlayer.All.SendInfoMessage("[Lottery] Type /lottery to figure out how to play!");
+                }
+            }
+            private void GeneralHelpTimer(object sender, ElapsedEventArgs args)
+            {
+                if (LotteryMain.LotteryRunning)
+                {
+                    if (MaxLotteryNumber - Configfile.config.GeneralHelpRange > LotteryMain.LotteryWinningNumer && MinLotteryNumber + Configfile.config.GeneralHelpRange < LotteryMain.LotteryWinningNumer)
+                    {
+                        MaxLotteryNumber -= Configfile.config.GeneralHelpRange;
+                        MinLotteryNumber += Configfile.config.GeneralHelpRange;
+                        TSPlayer.All.SendInfoMessage("[Lottery] The lottery has been made easier and is now between {0} and {1}. The total is {2}.", MinLotteryNumber, MaxLotteryNumber, LotteryMain.Lotterytotalmoney);
+                    }
                 }
             }
             private void SaveTimer(object sender, ElapsedEventArgs args)

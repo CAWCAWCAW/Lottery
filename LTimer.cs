@@ -51,7 +51,7 @@ namespace Lottery
             {
                 if (LotteryMain.LotteryRunning)
                 {
-                    if (MaxLotteryNumber - Configfile.config.GeneralHelpRange > LotteryMain.LotteryWinningNumer && MinLotteryNumber + Configfile.config.GeneralHelpRange < LotteryMain.LotteryWinningNumer)
+                    if ((MaxLotteryNumber - Configfile.config.ReductionAmount) > (LotteryMain.LotteryWinningNumer + Configfile.config.GeneralHelpRange) && (MinLotteryNumber + Configfile.config.ReductionAmount) < (LotteryMain.LotteryWinningNumer - Configfile.config.GeneralHelpRange))
                     {
                         MaxLotteryNumber -= Configfile.config.GeneralHelpRange;
                         MinLotteryNumber += Configfile.config.GeneralHelpRange;

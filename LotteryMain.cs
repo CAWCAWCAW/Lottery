@@ -20,7 +20,7 @@ namespace Lottery
         public override string Author { get { return "CAWCAWCAW"; } }
         public override string Description { get { return "A simple lottery script."; } }
         public override string Name { get { return "Lottery"; } }
-        public override Version Version { get { return new Version("1.3"); } }
+        public override Version Version { get { return new Version("1.3.5"); } }
 
 
         public LotteryMain(Main game)

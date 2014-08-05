@@ -7,6 +7,7 @@ using TShockAPI;
 using Terraria;
 using TerrariaApi.Server;
 using Wolfje.Plugins.SEconomy;
+using Wolfje.Plugins.SEconomy.Journal;
 
 namespace Lottery
 {
@@ -72,22 +73,23 @@ namespace Lottery
         public static bool LotteryRunning = false;
         public static bool LotteryCanSave = true;
 
-
         public void Lottery(CommandArgs args)
         {
-            if (args.Parameters.Count < 1)
+            if (Playerlist[args.Player.Index] != null)
             {
-                if (args.Player.Group.HasPermission("caw.lotteryadmin"))
+                if (args.Parameters.Count < 1)
                 {
-                args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/total/pastguesses/hint/help/save/lotteryreload/cancel]");
-                return;
+                    if (args.Player.Group.HasPermission("caw.lotteryadmin"))
+                    {
+                        args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/total/pastguesses/hint/help/save/lotteryreload/cancel]");
+                        return;
+                    }
+                    else
+                    {
+                        args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/total/pastguesses/hint/help]");
+                        return;
+                    }
                 }
-                else
-                {
-                    args.Player.SendErrorMessage("Invalid syntax! Use /lottery [start/guess/total/pastguesses/hint/help]");
-                    return;
-                }
-            }
                 switch (args.Parameters[0])
                 {
                     case "start":
@@ -96,7 +98,7 @@ namespace Lottery
                             if (!LotteryRunning)
                             {
                                 Random random = new Random();
-                                LotteryWinningNumer = random.Next(Configfile.config.MinimumLotteryNumber, (Configfile.config.MaximumLotteryNumber +1 ));
+                                LotteryWinningNumer = random.Next(Configfile.config.MinimumLotteryNumber, (Configfile.config.MaximumLotteryNumber + 1));
                                 LotteryRunning = true;
                                 Money.TryParse(Configfile.config.LotteryTotalStartAmount, out Lotterytotalmoney);
                                 Lotterynumberhigh = (LotteryWinningNumer + random.Next(1, Configfile.config.RandomHintRange + 1));
@@ -118,10 +120,10 @@ namespace Lottery
 
                     case "guess":
                         var Journalpayment = Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToSender;
-                        var UserSEAccount = SEconomyPlugin.GetEconomyPlayerByBankAccountNameSafe(args.Player.UserAccountName);
-                        var playeramount = UserSEAccount.BankAccount.Balance;
+                        var UserSEAccount = SEconomyPlugin.Instance.GetBankAccount(args.Player.UserAccountName);
+                        var playeramount = UserSEAccount.Balance;
 
-                        if (LotteryRunning)
+                        if (SEconomyPlugin.Instance != null)
                         {
                             if (args.Parameters.Count < 2)
                             {
@@ -140,12 +142,12 @@ namespace Lottery
                             }
                             foreach (var player in Playerlist)
                             {
-                                    if (Playerlist[player.Index].guesses.Contains(numberguessed))
-                                    {
-                                        args.Player.SendErrorMessage("You have already guessed {0}, please try a different number.", numberguessed);
-                                        return;
-                                    }
-                                    break;
+                                if (Playerlist[player.Index].guesses.Contains(numberguessed))
+                                {
+                                    args.Player.SendErrorMessage("You have already guessed {0}, please try a different number.", numberguessed);
+                                    return;
+                                }
+                                break;
                             }
 
                             if (!Money.TryParse(args.Parameters[2], out amount))
@@ -174,18 +176,18 @@ namespace Lottery
                             if (playeramount > moneyamount2)
                             {
                                 args.Player.SendSuccessMessage("You have guessed {0} and added {1} to the lottery.", numberguessed, moneyamount2);
-                                SEconomyPlugin.WorldAccount.TransferToAsync(UserSEAccount.BankAccount, moneyamount, Journalpayment, string.Format("{0} has been added to the lottery.", moneyamount2, args.Player.Name), string.Format("Lottery: " + "Adding money into the pool."));
+                                SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UserSEAccount, moneyamount, Journalpayment, string.Format("{0} has been added to the lottery.", moneyamount2, args.Player.Name), string.Format("Lottery: " + "Adding money into the pool."));
                                 Lotterytotalmoney += amount;
                                 Playerlist[args.Player.Index].contribution += amount;
                                 Playerlist[args.Player.Index].guessedtimes++;
                                 Playerlist[args.Player.Index].guesses.Add(numberguessed);
-                                
+
 
                             }
                             if (numberguessed == LotteryWinningNumer)
                             {
                                 TSPlayer.All.SendInfoMessage("[Lottery] {0} has won the lottery of {1}!", args.Player.Name, Lotterytotalmoney);
-                                SEconomyPlugin.WorldAccount.TransferToAsync(UserSEAccount.BankAccount, Lotterytotalmoney, Journalpayment, string.Format("{0} has won the lottery!.", args.Player.Name), string.Format("Lottery: " + "Winning"));
+                                SEconomyPlugin.Instance.WorldAccount.TransferToAsync(UserSEAccount, Lotterytotalmoney, Journalpayment, string.Format("{0} has won the lottery!.", args.Player.Name), string.Format("Lottery: " + "Winning"));
                                 Lotterytotalmoney = 0;
                                 LotteryRunning = false;
                                 foreach (var player in Playerlist)
@@ -322,6 +324,11 @@ namespace Lottery
                         }
                         break;
                 }
+            }
+            else
+            {
+                return;
+            }
         }
         #endregion
 
